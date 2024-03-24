@@ -4,23 +4,24 @@ import Post from "../models/Post";
 import User from "../models/User";
 import { fileRemover } from "../utils/fileRemover";
 
-export const registerUser = async (req, res, next) => {
+const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    //check whether the user exists or not
+    // check whether the user exists or not
     let user = await User.findOne({ email });
 
     if (user) {
       throw new Error("User have already registered");
     }
 
-    //creating a new user
+    // creating a new user
     user = await User.create({
       name,
       email,
       password,
     });
+
     return res.status(201).json({
       _id: user._id,
       avatar: user.avatar,
@@ -35,7 +36,7 @@ export const registerUser = async (req, res, next) => {
   }
 };
 
-export const loginUser = async (req, res, next) => {
+const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -66,6 +67,7 @@ export const loginUser = async (req, res, next) => {
 const userProfile = async (req, res, next) => {
   try {
     let user = await User.findById(req.user._id);
+
     if (user) {
       return res.status(201).json({
         _id: user._id,
@@ -87,10 +89,24 @@ const userProfile = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    let user = await User.findById(req.user._id);
+    const userIdToUpdate = req.params.userId;
+
+    let userId = req.user._id;
+
+    if (!req.user.admin && userId !== userIdToUpdate) {
+      let error = new Error("Forbidden resource");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    let user = await User.findById(userIdToUpdate);
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    if (typeof req.body.admin !== "undefined" && req.user.admin) {
+      user.admin = req.body.admin;
     }
 
     user.name = req.body.name || user.name;
@@ -227,7 +243,12 @@ const deleteUser = async (req, res, next) => {
       _id: { $in: postIdsToDelete },
     });
 
+    postsToDelete.forEach((post) => {
+      fileRemover(post.photo);
+    });
+
     await user.remove();
+    fileRemover(user.avatar);
 
     res.status(204).json({ message: "User is deleted successfully" });
   } catch (error) {
