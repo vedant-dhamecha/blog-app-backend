@@ -11,6 +11,7 @@ const UserSchema = new Schema(
     verified: { type: Boolean, default: false },
     verificationcode: { type: String, require: false },
     admin: { type: Boolean, default: false },
+    member: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

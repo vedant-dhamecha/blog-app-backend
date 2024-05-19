@@ -1,6 +1,8 @@
 import { verify } from "jsonwebtoken";
 import User from "../models/User";
 
+// authMiddleware.js
+
 export const authGuard = async (req, res, next) => {
   if (
     req.headers.authorization &&
@@ -24,10 +26,21 @@ export const authGuard = async (req, res, next) => {
 };
 
 export const adminGuard = (req, res, next) => {
-  if (req.user && req.user.admin) {
+  if (req.user && (req.user.admin)) { 
     next();
   } else {
     let error = new Error("Not authorized as an admin");
+    error.statusCode = 401;
+    next(error);
+  }
+};
+
+
+export const memberGuard = (req, res, next) => {
+  if (req.user && (req.user.member )) { 
+    next();
+  } else {
+    let error = new Error("Not authorized as an member");
     error.statusCode = 401;
     next(error);
   }

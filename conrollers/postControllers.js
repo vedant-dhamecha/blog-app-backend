@@ -30,7 +30,7 @@ const updatePost = async (req, res, next) => {
     const post = await Post.findOne({ slug: req.params.slug });
 
     if (!post) {
-      const error = new Error("Post aws not found");
+      const error = new Error("Post was not found");
       next(error);
       return;
     }
@@ -137,7 +137,6 @@ const getPost = async (req, res, next) => {
         ],
       },
     ]);
-
     if (!post) {
       const error = new Error("Post was not found");
       return next(error);
@@ -196,4 +195,60 @@ const getAllPosts = async (req, res, next) => {
   }
 };
 
-export { createPost, updatePost, deletePost, getPost, getAllPosts };
+const getAllPostsForUser = async (req, res, next) => {
+  try {
+    const user = req.params.user; // Retrieve userId from route parameter
+    const filter = req.query.searchKeyword;
+    let where = { user: user }; // Filter posts by user ID
+    if (filter) {
+      where.title = { $regex: filter, $options: "i" };
+    }
+
+    let query = Post.find(where);
+    const page = parseInt(req.query.page) || 1;
+    const pageSize = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * pageSize;
+    const total = await Post.find(where).countDocuments();
+    const pages = Math.ceil(total / pageSize);
+
+    res.header({
+      "x-filter": filter,
+      "x-totalcount": JSON.stringify(total),
+      "x-currentpage": JSON.stringify(page),
+      "x-pagesize": JSON.stringify(pageSize),
+      "x-totalpagecount": JSON.stringify(pages),
+    });
+    if (page > pages) {
+      return res.json([]);
+    }
+
+    const result = await query
+      .skip(skip)
+      .limit(pageSize)
+      .populate([
+        {
+          path: "user",
+          select: ["avatar", "name", "verified"],
+        },
+        {
+          path: "categories",
+          select: ["title"],
+        },
+      ])
+      .sort({ updatedAt: "desc" });
+
+    // Return the posts
+    return res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export {
+  createPost,
+  updatePost,
+  deletePost,
+  getPost,
+  getAllPosts,
+  getAllPostsForUser,
+};

@@ -29,6 +29,7 @@ const registerUser = async (req, res, next) => {
       email: user.email,
       verified: user.verified,
       admin: user.admin,
+      member: user.member,
       token: await user.generateJWT(),
     });
   } catch (error) {
@@ -54,6 +55,7 @@ const loginUser = async (req, res, next) => {
         email: user.email,
         verified: user.verified,
         admin: user.admin,
+        member: user.member,
         token: await user.generateJWT(),
       });
     } else {
@@ -76,6 +78,7 @@ const userProfile = async (req, res, next) => {
         email: user.email,
         verified: user.verified,
         admin: user.admin,
+        member: user.member,
       });
     } else {
       let error = new Error("User not found");
@@ -93,16 +96,22 @@ const updateProfile = async (req, res, next) => {
 
     let userId = req.user._id;
 
-    if (!req.user.admin && userId !== userIdToUpdate) {
-      let error = new Error("Forbidden resource");
-      error.statusCode = 403;
-      throw error;
-    }
+    //only alllow admin to update profile
+    // if (!req.user.admin && userId !== userIdToUpdate) {
+    //   let error = new Error("Forbidden resource");
+    //   error.statusCode = 403;
+    //   throw error;
+    // }
 
     let user = await User.findById(userIdToUpdate);
 
     if (!user) {
       throw new Error("User not found");
+    }
+
+    //make member
+    if (req.body.makeMember === true) {
+      user.member = true;
     }
 
     if (typeof req.body.admin !== "undefined" && req.user.admin) {
@@ -126,6 +135,7 @@ const updateProfile = async (req, res, next) => {
       email: updatedUserProfile.email,
       verified: updatedUserProfile.verified,
       admin: updatedUserProfile.admin,
+      member: updatedUserProfile.member,
       token: await updatedUserProfile.generateJWT(),
     });
   } catch (error) {
@@ -161,6 +171,7 @@ const updateProfilePicture = async (req, res, next) => {
             email: updatedUser.email,
             verified: updatedUser.verified,
             admin: updatedUser.admin,
+            member: updatedUser.member,
             token: await updatedUser.generateJWT(),
           });
         } else {
@@ -177,6 +188,7 @@ const updateProfilePicture = async (req, res, next) => {
             email: updatedUser.email,
             verified: updatedUser.verified,
             admin: updatedUser.admin,
+            member: updatedUser.member,
             token: await updatedUser.generateJWT(),
           });
         }

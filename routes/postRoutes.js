@@ -4,16 +4,19 @@ import {
     createPost,
     deletePost,
     getAllPosts,
+    getAllPostsForUser,
     getPost,
     updatePost,
   } from "../conrollers/postControllers.js";
-import { authGuard, adminGuard } from "../middleware/authMiddleware";
+import { authGuard, adminGuard, memberGuard } from "../middleware/authMiddleware";
 
-router.route("/").post(authGuard, adminGuard, createPost).get(getAllPosts);
 router
   .route("/:slug")
   .put(authGuard, adminGuard, updatePost)
   .delete(authGuard, adminGuard, deletePost)
   .get(getPost);
+
+router.route("/").post(authGuard, createPost).get(getAllPosts);
+router.route("/member/:user").post(authGuard, memberGuard, createPost).get(getAllPostsForUser);
 
 export default router;
